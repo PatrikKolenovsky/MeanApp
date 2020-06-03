@@ -3,10 +3,11 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var lessMiddleware = require('less-middleware');
 var logger = require('morgan');
-var config = require('/config/db-config.json')
+var config = require('./config/db-config.json')
 var connectionString = config.connectionString;
 const mongoose = require('mongoose');
 mongoose.connect(connectionString,{ useUnifiedTopology: true, useNewUrlParser: true });
+mongoose.Promise = global.Promise;
 
 var indexRouter = require('./routes/index');
 var productRouter = require('./routes/products');

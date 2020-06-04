@@ -28,78 +28,91 @@ router.get('/', function (req, res, next) {
                 }
             );
         }
-    ).catch(err => {
-        docs => {
-            res.status(500).json({
-                error: err
-            });
-        }
-    })
+    ).catch(err => sendError(err))
+});
+
+
+router.get('/:orderId', function (req, res, next) {
+    Order.findById(req.params.orderId).exec()
+        .then(
+           order => {
+               if (!order) {
+                   return res.status(404).json({
+                       message: "Order not found"
+                   })
+               }
+               res.status(200).json({
+                   order: order,
+                   request: {
+                       type: 'GET',
+                       url: 'http://localhost:3000/orders/'
+                   }
+               })
+           }
+        ).catch(err => sendError(err, res));
 });
 
 router.post('/', function (req, res, next) {
     Product.findById(req.body.productId)
         .then(
             product => {
+                if (!product) {
+                    return res.status(404).json({
+                        message: 'product no found'
+                    })
+                }
                 const order = new Order({
                     _id: mongoose.Types.ObjectId(),
                     quantity: req.body.quantity,
                     product: req.body.productId
                 });
-                order.save()
-                    .then(
-                        result => {
-                            console.log(result);
-                            res.status(201).json({
-                                message: 'Order created',
-                                createdOrder: {
-                                    _id: result._id,
-                                    product: result.product,
-                                    quantity: result.quantity
-                                },
-                                request: {
-                                    type: 'GET',
-                                    url: 'http://localhost:3000/orders/' + result._id,
+                return order.save()
+            }
+        ).then(
+        result => getCreateProductResult(res, 'created', result, 'POST')
+    )
+        .catch(err => sendError(err, res));
+});
 
-                                }
-                            });
 
-                        }
-                    )
-                    .catch(err => {
-                        console.log(err);
-                        res.status(500).json({
-                            error: err
-                        });
-                    });
-                res.status(201).json({
-                    message: 'Orders were created',
-                    order: order
+router.delete('/:orderId', function (req, res, next) {
+    Order.remove({_id: req.params.orderId}).exec()
+        .then(
+            result => {
+                res.status(200).json({
+                    message: 'Order deleted',
+                    request: {
+                        type: "DELETE",
+                        url: 'http://localhost:3000/orders/',
+                        body: { productId: 'ID', quantity: 'Number'}
+                    }
                 })
             }
         )
-        .catch(
-            err => {
-                res.status(500).json({
-                    message: 'Product not found',
-                    error: err
-                })
-            }
-        );
-
+        .catch(err => sendError(err, res));
 });
 
-router.get('/:orderId', function (req, res, next) {
-    res.status(201).json({
-        message: 'Orders details',
-        orderId: req.params.orderId
-    })
-});
-router.delete('/:orderId', function (req, res, next) {
-    res.status(201).json({
-        message: 'Order deleted',
-        orderId: req.params.orderId
-    })
-});
+function getCreateProductResult(res, msg, result, type) {
+    console.log(result);
+    return res.status(201).json({
+        message: 'Order ' + msg,
+        createdOrder: {
+            _id: result._id,
+            product: result.product,
+            quantity: result.quantity
+        },
+        request: {
+            type: type,
+            url: 'http://localhost:3000/orders/' + result._id,
+        }
+    });
+}
+
+function sendError(err, res) {
+    console.log(err);
+    return res.status(500).json({
+        error: err
+    });
+}
 
 module.exports = router;

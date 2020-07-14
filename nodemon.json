@@ -1,5 +1,6 @@
 {
     "env": {
-        "MONGO_ATLAS_PW": "nodeTest"
+        "MONGO_ATLAS_PW": "nodeTest",
+        "JWT_KEY": "pizza"
     }
 }

@@ -12,6 +12,7 @@ mongoose.Promise = global.Promise;
 var indexRouter = require('./routes/index');
 var productRouter = require('./routes/products');
 var orderRouter = require('./routes/orders');
+var userRouter = require('./routes/user');
 
 var app = express();
 
@@ -25,6 +26,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', indexRouter);
 app.use('/products', productRouter);
 app.use('/orders', orderRouter);
+app.use('/user', userRouter);
 
 app.use((req, res, next) => {
     const error = new Error('Not found');

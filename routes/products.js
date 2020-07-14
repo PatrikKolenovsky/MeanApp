@@ -2,12 +2,40 @@ var express = require('express');
 var router = express.Router();
 const mongoose = require('mongoose');
 const Product = require('../models/product');
+const multer = require('multer');
 
-router.post('/', (req, res, next) => {
+const storage = multer.diskStorage({
+    destination: function (req, fil, callback) {
+        callback(null, './uploads/');
+    },
+    filename: function (req, file, callback) {
+        callback(null, Date.now() + file.originalname)
+    }
+});
+
+const fileFilter = (req, file, callback) => {
+    if (file) {
+        if (file.mimeType === 'image/jpg') {
+            callback(null, true);
+        } else {
+            callback(null, false);
+        }
+    }
+}
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter()
+});
+
+
+router.post('/', upload.single('productImage'), (req, res, next) => {
+    console.log(req.file);
     const product = new Product({
         _id: new mongoose.Types.ObjectId(),
         name: req.body.name,
-        price: req.body.price
+        price: req.body.price,
+        productImage: req.file.path
     });
 
     product.save().then(result => {
@@ -24,13 +52,12 @@ router.post('/', (req, res, next) => {
                 }
             }
         })
-    }).catch(err => console.log(err));
-
+    }).catch(err => sendError(err, res));
 });
 
 router.get('/', (req, res, next) => {
     Product.find()
-        .select('name price _id')
+        .select('name price _id productImage')
         .exec()
         .then(docs => {
             const response = {
@@ -40,6 +67,7 @@ router.get('/', (req, res, next) => {
                         name: doc.name,
                         price: doc.price,
                         _id: doc._id,
+                        productImage: doc.productImage,
                         request: {
                             type: 'GET',
                             url: 'http://localhost:3000/products/' + doc._id,
@@ -49,22 +77,13 @@ router.get('/', (req, res, next) => {
             };
             res.status(200).json(docs);
         })
-        .catch(
-            err => {
-                console.log(err);
-                res.status(500).json(
-                    {
-                        error: err
-                    }
-                )
-            }
-        )
+        .catch(err => sendError(err, res));
 });
 
 router.get('/:productId', (req, res, next) => {
     const id = req.params.productId;
     Product.findById(id)
-        .select('name price _id')
+        .select('name price _id productImage')
         .exec()
         .then(doc => {
             if (doc) {
@@ -82,12 +101,7 @@ router.get('/:productId', (req, res, next) => {
                 });
             }
         })
-        .catch(
-            err => {
-                console.log(err);
-                res.status(500).json({error: err})
-            }
-        );
+        .catch(err => sendError(err, res));
 });
 
 router.patch('/:productId', (req, res, next) => {
@@ -112,14 +126,7 @@ router.patch('/:productId', (req, res, next) => {
                 }
             })
         })
-        .catch(err => {
-                console.log(err);
-                res.status(500).json({
-                    error: err
-                });
-            }
-        );
-
+        .catch(err => sendError(err, res));
 });
 
 router.delete('/:productId', (req, res, next) => {
@@ -133,14 +140,14 @@ router.delete('/:productId', (req, res, next) => {
                 message: 'Product deleted'
             });
         })
-        .catch(err => {
-            console.log(err);
-            res.status(500).json(
-                {
-                    error: err
-                }
-            )
-        });
+        .catch(err => sendError(err, res));
 });
+
+function sendError(err, res) {
+    console.log(err);
+    return res.status(500).json({
+        error: err
+    });
+}
 
 module.exports = router;

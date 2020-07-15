@@ -1,13 +1,10 @@
-const express = require("express");
-const router = express.Router();
 const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const User = require("../models/userModel");
-
-router.post("/signup", (req, res, next) => {
-    User.find({ email: req.body.email })
+const Users = require("../models/UserModel");
+exports.userSignUp = (req, res, next) => {
+    Users.find({email: req.body.email})
         .exec()
         .then(user => {
             if (user.length >= 1) {
@@ -21,7 +18,7 @@ router.post("/signup", (req, res, next) => {
                             error: err
                         });
                     } else {
-                        const user = new User({
+                        const user = new Users({
                             _id: new mongoose.Types.ObjectId(),
                             email: req.body.email,
                             password: hash
@@ -31,7 +28,7 @@ router.post("/signup", (req, res, next) => {
                             .then(result => {
                                 console.log(result);
                                 res.status(201).json({
-                                    message: "User created"
+                                    message: "Users created"
                                 });
                             })
                             .catch(err => {
@@ -44,10 +41,10 @@ router.post("/signup", (req, res, next) => {
                 });
             }
         });
-});
+}
 
-router.post("/login", (req, res, next) => {
-    User.find({ email: req.body.email })
+exports.userLogin = (req, res, next) => {
+    Users.find({email: req.body.email})
         .exec()
         .then(user => {
             if (user.length < 1) {
@@ -88,14 +85,14 @@ router.post("/login", (req, res, next) => {
                 error: err
             });
         });
-});
+}
 
-router.delete("/:userId", (req, res, next) => {
-    User.remove({ _id: req.params.userId })
+exports.deleteUserById = (req, res, next) => {
+    Users.remove({_id: req.params.userId})
         .exec()
         .then(result => {
             res.status(200).json({
-                message: "User deleted"
+                message: "Users deleted"
             });
         })
         .catch(err => {
@@ -104,30 +101,27 @@ router.delete("/:userId", (req, res, next) => {
                 error: err
             });
         });
-});
+}
 
-router.get('/all', (req, res, next) => {
-        User.find()
-            .select('_id email')
-            .exec()
-            .then(
-                docs => {
-                    res.status(200).json(
-                        {
-                            count: docs.length,
-                            users: docs.map(
-                                doc => {
-                                    return {
-                                        _id: doc._id,
-                                        email: doc.email,
-                                    }
+exports.getAllUsers = (req, res, next) => {
+    Users.find()
+        .select('_id email')
+        .exec()
+        .then(
+            docs => {
+                res.status(200).json(
+                    {
+                        count: docs.length,
+                        users: docs.map(
+                            doc => {
+                                return {
+                                    _id: doc._id,
+                                    email: doc.email,
                                 }
-                            ),
-                        }
-                    );
-                }
-            )
-    }
-)
-
-module.exports = router;
+                            }
+                        ),
+                    }
+                );
+            }
+        )
+}

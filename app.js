@@ -12,7 +12,7 @@ mongoose.Promise = global.Promise;
 var indexRouter = require('./routes/index');
 var productRouter = require('./routes/products');
 var orderRouter = require('./routes/orders');
-var userRouter = require('./routes/user');
+var userRouter = require('./routes/users');
 
 var app = express();
 
